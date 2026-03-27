@@ -1,0 +1,17 @@
+fastapi
+uvicorn[standard]
+kafka-python
+aiokafka
+langchain
+langchain-community
+langchain-core
+langchain-ollama
+qdrant-client
+sentence-transformers
+python-dotenv
+pydantic
+requests
+websockets
+langchain-groq
+langchain-huggingface
+langchain-qdrant

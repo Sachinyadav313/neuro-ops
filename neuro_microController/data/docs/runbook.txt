@@ -1,0 +1,71 @@
+---
+service: auth-service
+error_pattern: Redis OOM command not allowed
+severity: critical
+solution: |
+  # RESOLUTION: REDIS OUT OF MEMORY
+  # The Redis instance has reached its maxmemory limit.
+  
+  # Step 1: Connect to the Redis container
+  redis-cli -h localhost -p 6379
+  
+  # Step 2: Change the eviction policy to remove old keys
+  CONFIG SET maxmemory-policy allkeys-lru
+  
+  # Step 3 (Optional): Increase memory limit temporarily
+  CONFIG SET maxmemory 512mb
+  
+  # Step 4: Clear non-essential keys if needed
+  # CAUTION: Only run if policy change doesn't work
+  # FLUSHALL ASYNC
+---
+service: payment-api
+error_pattern: Connection refused to DB:5432
+severity: high
+solution: |
+  # RESOLUTION: DATABASE CONNECTION REFUSED
+  # The application cannot reach the PostgreSQL database.
+  
+  # Step 1: Check if the database container is running
+  sudo docker ps | grep postgres
+  
+  # Step 2: If down, restart the service
+  sudo docker restart neuro-postgres
+  
+  # Step 3: Check logs for startup errors
+  sudo docker logs neuro-postgres --tail 50
+  
+  # Step 4: Verify network connectivity
+  nc -zv localhost 5432
+---
+service: payment-api
+error_pattern: API response time > 500ms
+severity: warning
+solution: |
+  # RESOLUTION: HIGH LATENCY DETECTED
+  # The API is responding slowly, likely due to connection pool exhaustion.
+  
+  # Step 1: Check current active connections
+  netstat -an | grep :8080 | wc -l
+  
+  # Step 2: Scale up the service (Horizontal Scaling)
+  sudo docker service scale payment_api=3
+  
+  # Step 3: Check CPU usage
+  htop -p $(pgrep -f "uvicorn")
+---
+service: kafka
+error_pattern: BrokerTransportFailure
+severity: critical
+solution: |
+  # RESOLUTION: KAFKA BROKER DOWN
+  # The producer cannot send messages to the broker.
+  
+  # Step 1: Check Zookeeper status first (Kafka needs it)
+  sudo docker logs zookeeper
+  
+  # Step 2: Restart the broker
+  sudo docker restart kafka
+  
+  # Step 3: Check disk space for logs
+  df -h /var/lib/kafka/data
